@@ -3,7 +3,9 @@ import 'dart:io';
 
 import '../ports/endpoint_probe.dart';
 
+/// Implementation of [VNPTEndpointProbe] using standard Dart [Socket]s.
 class DartSocketEndpointProbe implements VNPTEndpointProbe {
+  /// Creates a [DartSocketEndpointProbe].
   const DartSocketEndpointProbe();
 
   @override

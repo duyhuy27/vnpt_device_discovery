@@ -220,10 +220,10 @@ void main() {
             endpointProbe: probe,
             logger: const NoopScanLogger(),
           ).createSession(
-            request: VNPTDiscoveryRequest(
+            request: const VNPTDiscoveryRequest(
               network: network,
               profile: VNPTScanProfile.test,
-              portTimeoutOverride: const Duration(milliseconds: 40),
+              portTimeoutOverride: Duration(milliseconds: 40),
               concurrencyOverride: 1,
             ),
           );

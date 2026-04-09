@@ -1,9 +1,13 @@
 name: vnpt_device_discovery
-description: Targeted VNPT device discovery for local networks.
+description: A specialized Flutter package for targeted VNPT device discovery in local networks using controlled scanning phases.
 version: 0.1.0
+homepage: https://github.com/duyhuy27/vnpt_device_discovery
+repository: https://github.com/duyhuy27/vnpt_device_discovery
+issue_tracker: https://github.com/duyhuy27/vnpt_device_discovery/issues
 
 environment:
-  sdk: ^3.9.0
+  sdk: '>=3.1.0 <4.0.0'
+  flutter: '>=3.13.0'
 
 dependencies:
   flutter:
@@ -12,8 +16,7 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^5.0.0
-
+  flutter_lints: ^4.0.0
 
 flutter:
   uses-material-design: true

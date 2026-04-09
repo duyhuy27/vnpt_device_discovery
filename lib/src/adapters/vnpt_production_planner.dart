@@ -2,9 +2,17 @@ import '../model/discovery_request.dart';
 import '../model/scan_plan.dart';
 import '../ports/scan_planner.dart';
 
+/// Production-ready implementation of [VNPTScanPlanner].
+///
+/// This planner uses a multi-phase strategy to find VNPT devices:
+/// 1. **Targeted**: Probes suffixes known to be common (132, 133, 134).
+/// 2. **Nearby Expanded**: Probes suffixes around the local network host and some defaults.
+/// 3. **Generic Fallback**: Probes the remaining addresses in the 1-254 range.
 class VNPTProductionPlanner implements VNPTScanPlanner {
+  /// The fixed port used for VNPT device discovery.
   static const int fixedPort = 40029;
 
+  /// Creates a [VNPTProductionPlanner].
   const VNPTProductionPlanner();
 
   @override

@@ -1,3 +1,10 @@
+/// A specialized Flutter package for targeted VNPT device discovery.
+///
+/// This package provides a controlled scanning mechanism to find VNPT devices
+/// (typically AIBox or similar) on a local network by probing specific ports
+/// and using a phase-based search strategy.
+library vnpt_device_discovery;
+
 export 'src/model/discovered_device.dart';
 export 'src/model/discovery_api.dart';
 export 'src/model/discovery_event.dart';
