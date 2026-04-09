@@ -1,7 +1,6 @@
 name: vnpt_device_discovery
 description: Targeted VNPT device discovery for local networks.
 version: 0.1.0
-publish_to: 'none'
 
 environment:
   sdk: ^3.9.0

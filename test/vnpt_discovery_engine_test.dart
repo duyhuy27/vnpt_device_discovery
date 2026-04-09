@@ -11,6 +11,32 @@ void main() {
     subnetMask: '255.255.255.0',
   );
 
+  test('finds 2 AIBox devices in the winning targeted phase', () async {
+    await expectWinningPhaseFindsAllDevices(
+      openIps: const ['192.168.88.133', '192.168.88.132'],
+      expectedPhaseStopsBeforeGenericFallback: true,
+    );
+  });
+
+  test('finds 3 AIBox devices in the winning targeted phase', () async {
+    await expectWinningPhaseFindsAllDevices(
+      openIps: const ['192.168.88.133', '192.168.88.132', '192.168.88.134'],
+      expectedPhaseStopsBeforeGenericFallback: true,
+    );
+  });
+
+  test('finds 4 AIBox devices in the winning nearbyExpanded phase', () async {
+    await expectWinningPhaseFindsAllDevices(
+      openIps: const [
+        '192.168.88.140',
+        '192.168.88.139',
+        '192.168.88.141',
+        '192.168.88.100',
+      ],
+      expectedPhaseStopsBeforeGenericFallback: true,
+    );
+  });
+
   test('if targeted finds a candidate, no later phase runs', () async {
     final probe = FakeEndpointProbe(
       behaviors: <String, ProbeBehavior>{
@@ -353,6 +379,53 @@ void main() {
       VNPTDiscoveryFailureReason.unknown,
     );
   });
+}
+
+Future<void> expectWinningPhaseFindsAllDevices({
+  required List<String> openIps,
+  required bool expectedPhaseStopsBeforeGenericFallback,
+}) async {
+  const network = VNPTNetworkContext(
+    localIp: '192.168.88.140',
+    subnet: '192.168.88',
+    subnetMask: '255.255.255.0',
+  );
+
+  final behaviors = <String, ProbeBehavior>{
+    for (final ip in openIps) '$ip:40029': const ProbeBehavior(isOpen: true),
+  };
+  final probe = FakeEndpointProbe(behaviors: behaviors);
+  final session = VNPTDiscoveryEngine(
+    planner: const VNPTProductionPlanner(),
+    endpointProbe: probe,
+    logger: const NoopScanLogger(),
+  ).createSession(request: VNPTDiscoveryRequest.test(network, concurrency: 1));
+
+  final events = await collectEvents(session);
+  final foundIps = events
+      .whereType<VNPTCandidateFound>()
+      .map((event) => event.device.ip)
+      .toList(growable: false);
+  final snapshots = events.whereType<VNPTCandidateListUpdated>().toList();
+  final completed = events.whereType<VNPTDiscoveryCompleted>().single;
+
+  expect(foundIps, openIps);
+  expect(snapshots, hasLength(1));
+  expect(
+    snapshots.single.devices.map((device) => device.ip).toList(growable: false),
+    openIps,
+  );
+  expect(
+    completed.result.devices.map((device) => device.ip).toList(growable: false),
+    openIps,
+  );
+
+  if (expectedPhaseStopsBeforeGenericFallback) {
+    expect(
+      probe.timeline.any((entry) => entry.startsWith('192.168.88.1:')),
+      isFalse,
+    );
+  }
 }
 
 Future<List<VNPTDiscoveryEvent>> collectEvents(
