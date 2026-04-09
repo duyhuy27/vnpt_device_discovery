@@ -82,7 +82,7 @@ class _ExampleHomePageState extends State<ExampleHomePage> {
       return;
     }
     final subnet = '${parts[0]}.${parts[1]}.${parts[2]}';
-    final subnetMask = '255.255.255.0';
+    const subnetMask = '255.255.255.0';
     final request = VNPTDiscoveryRequest.production(
       VNPTNetworkContext(
         localIp: wifiIP,

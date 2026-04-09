@@ -1,6 +1,8 @@
 import '../ports/scan_logger.dart';
 
+/// A [VNPTScanLogger] implementation that discards all log messages.
 class NoopScanLogger implements VNPTScanLogger {
+  /// Creates a [NoopScanLogger].
   const NoopScanLogger();
 
   @override

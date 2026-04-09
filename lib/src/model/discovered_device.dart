@@ -1,10 +1,21 @@
+/// Represents a VNPT device discovered on the network.
 class VNPTDiscoveredDevice {
+  /// The IP address of the discovered device.
   final String ip;
+
+  /// The port on which the device was discovered (typically 40029).
   final int port;
+
+  /// The round-trip time in milliseconds for the discovery probe.
   final int? responseTimeMs;
+
+  /// When the device was first seen during the current session.
   final DateTime firstSeen;
+
+  /// When the device was last seen/verified.
   final DateTime lastSeen;
 
+  /// Creates a [VNPTDiscoveredDevice] with the given information.
   const VNPTDiscoveredDevice({
     required this.ip,
     required this.port,

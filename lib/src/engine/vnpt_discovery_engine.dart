@@ -1,10 +1,10 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:math';
 
-import '../adapters/dart_socket_endpoint_probe.dart';
+import '../adapters/endpoint_probe_factory.dart';
 import '../adapters/noop_scan_logger.dart';
 import '../adapters/vnpt_production_planner.dart';
+import '../ports/network_exceptions.dart';
 import '../model/discovered_device.dart';
 import '../model/discovery_api.dart';
 import '../model/discovery_event.dart';
@@ -17,22 +17,33 @@ import '../ports/endpoint_probe.dart';
 import '../ports/scan_logger.dart';
 import '../ports/scan_planner.dart';
 
+/// Standard implementation of [VNPTDiscovery].
+///
+/// Uses a [VNPTScanPlanner] to define scanning strategies, a [VNPTEndpointProbe]
+/// to check network connections, and an optional [VNPTScanLogger] for diagnostics.
 class VNPTDiscoveryEngine implements VNPTDiscovery {
+  /// The planner used to generate scanning phases.
   final VNPTScanPlanner planner;
+
+  /// The probe used to check if a specific IP/port is open.
   final VNPTEndpointProbe endpointProbe;
+
+  /// The logger used for internal messages and errors.
   final VNPTScanLogger logger;
 
+  /// Creates a [VNPTDiscoveryEngine] with the given dependencies.
   const VNPTDiscoveryEngine({
     required this.planner,
     required this.endpointProbe,
     this.logger = const NoopScanLogger(),
   });
 
+  /// Creates a standard [VNPTDiscoveryEngine] with production-ready defaults.
   factory VNPTDiscoveryEngine.standard() {
-    return const VNPTDiscoveryEngine(
-      planner: VNPTProductionPlanner(),
-      endpointProbe: DartSocketEndpointProbe(),
-      logger: NoopScanLogger(),
+    return VNPTDiscoveryEngine(
+      planner: const VNPTProductionPlanner(),
+      endpointProbe: createDefaultProbe(),
+      logger: const NoopScanLogger(),
     );
   }
 
@@ -320,7 +331,12 @@ class _DefaultVNPTDiscoverySession implements VNPTDiscoverySession {
     if (error is TimeoutException) {
       return VNPTDiscoveryFailureReason.timeout;
     }
-    if (error is SocketException) {
+    if (error is VNPTNetworkException) {
+      return VNPTDiscoveryFailureReason.networkUnavailable;
+    }
+    final errorString = error.toString();
+    if (errorString.contains('SocketException') ||
+        errorString.contains('Network unreachable')) {
       return VNPTDiscoveryFailureReason.networkUnavailable;
     }
     if (error is ArgumentError ||
