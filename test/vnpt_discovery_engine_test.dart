@@ -47,14 +47,12 @@ void main() {
         ),
       },
     );
-    final session =
-        VNPTDiscoveryEngine(
-          planner: const VNPTProductionPlanner(),
-          endpointProbe: probe,
-          logger: const NoopScanLogger(),
-        ).createSession(
-          request: VNPTDiscoveryRequest.test(network, concurrency: 1),
-        );
+    final session = VNPTDiscoveryEngine(
+      planner: const VNPTProductionPlanner(),
+      endpointProbe: probe,
+    ).createSession(
+      request: VNPTDiscoveryRequest.test(network, concurrency: 1),
+    );
 
     final events = await collectEvents(session);
     final completed = events.whereType<VNPTDiscoveryCompleted>().single;
@@ -64,8 +62,8 @@ void main() {
     ]);
     expect(
       events.whereType<VNPTCandidateListUpdated>().single.devices.map(
-        (it) => it.ip,
-      ),
+            (it) => it.ip,
+          ),
       ['192.168.88.133'],
     );
     expect(completed.result.devices.map((it) => it.ip), ['192.168.88.133']);
@@ -91,14 +89,12 @@ void main() {
           ),
         },
       );
-      final session =
-          VNPTDiscoveryEngine(
-            planner: const VNPTProductionPlanner(),
-            endpointProbe: probe,
-            logger: const NoopScanLogger(),
-          ).createSession(
-            request: VNPTDiscoveryRequest.test(network, concurrency: 1),
-          );
+      final session = VNPTDiscoveryEngine(
+        planner: const VNPTProductionPlanner(),
+        endpointProbe: probe,
+      ).createSession(
+        request: VNPTDiscoveryRequest.test(network, concurrency: 1),
+      );
 
       final events = await collectEvents(session);
 
@@ -108,8 +104,8 @@ void main() {
       );
       expect(
         events.whereType<VNPTCandidateListUpdated>().single.devices.map(
-          (it) => it.ip,
-        ),
+              (it) => it.ip,
+            ),
         ['192.168.88.140'],
       );
       expect(
@@ -129,14 +125,12 @@ void main() {
         ),
       },
     );
-    final session =
-        VNPTDiscoveryEngine(
-          planner: const VNPTProductionPlanner(),
-          endpointProbe: probe,
-          logger: const NoopScanLogger(),
-        ).createSession(
-          request: VNPTDiscoveryRequest.test(network, concurrency: 1),
-        );
+    final session = VNPTDiscoveryEngine(
+      planner: const VNPTProductionPlanner(),
+      endpointProbe: probe,
+    ).createSession(
+      request: VNPTDiscoveryRequest.test(network, concurrency: 1),
+    );
 
     final events = await collectEvents(session);
 
@@ -146,8 +140,8 @@ void main() {
     );
     expect(
       events.whereType<VNPTCandidateListUpdated>().single.devices.map(
-        (it) => it.ip,
-      ),
+            (it) => it.ip,
+          ),
       ['192.168.88.5'],
     );
     expect(probe.timeline, contains('192.168.88.1:40029'));
@@ -163,14 +157,12 @@ void main() {
           '192.168.88.132:40029': const ProbeBehavior(isOpen: true),
         },
       );
-      final session =
-          VNPTDiscoveryEngine(
-            planner: const VNPTProductionPlanner(),
-            endpointProbe: probe,
-            logger: const NoopScanLogger(),
-          ).createSession(
-            request: VNPTDiscoveryRequest.test(network, concurrency: 1),
-          );
+      final session = VNPTDiscoveryEngine(
+        planner: const VNPTProductionPlanner(),
+        endpointProbe: probe,
+      ).createSession(
+        request: VNPTDiscoveryRequest.test(network, concurrency: 1),
+      );
 
       final events = await collectEvents(session);
       final milestone = events.whereType<VNPTCandidateListUpdated>().single;
@@ -193,14 +185,12 @@ void main() {
         '192.168.88.133:40029': const ProbeBehavior(isOpen: true),
       },
     );
-    final session =
-        VNPTDiscoveryEngine(
-          planner: const VNPTProductionPlanner(),
-          endpointProbe: probe,
-          logger: const NoopScanLogger(),
-        ).createSession(
-          request: VNPTDiscoveryRequest.test(network, concurrency: 1),
-        );
+    final session = VNPTDiscoveryEngine(
+      planner: const VNPTProductionPlanner(),
+      endpointProbe: probe,
+    ).createSession(
+      request: VNPTDiscoveryRequest.test(network, concurrency: 1),
+    );
 
     final events = await collectEvents(session);
     final completed = events.whereType<VNPTDiscoveryCompleted>().single;
@@ -214,19 +204,17 @@ void main() {
     () async {
       final gate = Completer<void>();
       final probe = CancelAwareProbe(gate);
-      final session =
-          VNPTDiscoveryEngine(
-            planner: const VNPTProductionPlanner(),
-            endpointProbe: probe,
-            logger: const NoopScanLogger(),
-          ).createSession(
-            request: const VNPTDiscoveryRequest(
-              network: network,
-              profile: VNPTScanProfile.test,
-              portTimeoutOverride: Duration(milliseconds: 40),
-              concurrencyOverride: 1,
-            ),
-          );
+      final session = VNPTDiscoveryEngine(
+        planner: const VNPTProductionPlanner(),
+        endpointProbe: probe,
+      ).createSession(
+        request: const VNPTDiscoveryRequest(
+          network: network,
+          profile: VNPTScanProfile.test,
+          portTimeoutOverride: Duration(milliseconds: 40),
+          concurrencyOverride: 1,
+        ),
+      );
 
       final events = <VNPTDiscoveryEvent>[];
       final completed = Completer<VNPTDiscoveryCompleted>();
@@ -273,18 +261,16 @@ void main() {
     'completion after cancel still respects the configured portTimeout bound',
     () async {
       final probe = TimeoutBoundProbe();
-      final session =
-          VNPTDiscoveryEngine(
-            planner: const VNPTProductionPlanner(),
-            endpointProbe: probe,
-            logger: const NoopScanLogger(),
-          ).createSession(
-            request: VNPTDiscoveryRequest.test(
-              network,
-              portTimeout: const Duration(milliseconds: 40),
-              concurrency: 2,
-            ),
-          );
+      final session = VNPTDiscoveryEngine(
+        planner: const VNPTProductionPlanner(),
+        endpointProbe: probe,
+      ).createSession(
+        request: VNPTDiscoveryRequest.test(
+          network,
+          portTimeout: const Duration(milliseconds: 40),
+          concurrency: 2,
+        ),
+      );
 
       await Future<void>.delayed(const Duration(milliseconds: 5));
       final watch = Stopwatch()..start();
@@ -300,14 +286,12 @@ void main() {
 
   test('progress remains throttled and uses target counts', () async {
     final probe = FakeEndpointProbe();
-    final session =
-        VNPTDiscoveryEngine(
-          planner: const VNPTProductionPlanner(),
-          endpointProbe: probe,
-          logger: const NoopScanLogger(),
-        ).createSession(
-          request: VNPTDiscoveryRequest.test(network, concurrency: 1),
-        );
+    final session = VNPTDiscoveryEngine(
+      planner: const VNPTProductionPlanner(),
+      endpointProbe: probe,
+    ).createSession(
+      request: VNPTDiscoveryRequest.test(network, concurrency: 1),
+    );
 
     final progress = <VNPTScanProgress>[];
     final done = Completer<void>();
@@ -357,14 +341,12 @@ void main() {
         '192.168.88.133:40029': ProbeBehavior.error(UnsupportedError('boom')),
       },
     );
-    final session =
-        VNPTDiscoveryEngine(
-          planner: const VNPTProductionPlanner(),
-          endpointProbe: probe,
-          logger: const NoopScanLogger(),
-        ).createSession(
-          request: VNPTDiscoveryRequest.test(network, concurrency: 1),
-        );
+    final session = VNPTDiscoveryEngine(
+      planner: const VNPTProductionPlanner(),
+      endpointProbe: probe,
+    ).createSession(
+      request: VNPTDiscoveryRequest.test(network, concurrency: 1),
+    );
 
     final events = <VNPTDiscoveryEvent>[];
     final done = Completer<void>();
@@ -398,7 +380,6 @@ Future<void> expectWinningPhaseFindsAllDevices({
   final session = VNPTDiscoveryEngine(
     planner: const VNPTProductionPlanner(),
     endpointProbe: probe,
-    logger: const NoopScanLogger(),
   ).createSession(request: VNPTDiscoveryRequest.test(network, concurrency: 1));
 
   final events = await collectEvents(session);
@@ -529,7 +510,7 @@ class ProbeBehavior {
   });
 
   const ProbeBehavior.error(Object this.error)
-    : isOpen = false,
-      delay = Duration.zero,
-      responseTimeMs = null;
+      : isOpen = false,
+        delay = Duration.zero,
+        responseTimeMs = null;
 }

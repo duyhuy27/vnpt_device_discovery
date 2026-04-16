@@ -1,8 +1,9 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:vnpt_device_discovery/src/engine/vnpt_logger_engine.dart';
+
 import '../adapters/endpoint_probe_factory.dart';
-import '../adapters/noop_scan_logger.dart';
 import '../adapters/vnpt_production_planner.dart';
 import '../ports/network_exceptions.dart';
 import '../model/discovered_device.dart';
@@ -14,7 +15,6 @@ import '../model/discovery_result.dart';
 import '../model/scan_plan.dart';
 import '../model/scan_progress.dart';
 import '../ports/endpoint_probe.dart';
-import '../ports/scan_logger.dart';
 import '../ports/scan_planner.dart';
 
 /// Standard implementation of [VNPTDiscovery].
@@ -28,14 +28,10 @@ class VNPTDiscoveryEngine implements VNPTDiscovery {
   /// The probe used to check if a specific IP/port is open.
   final VNPTEndpointProbe endpointProbe;
 
-  /// The logger used for internal messages and errors.
-  final VNPTScanLogger logger;
-
   /// Creates a [VNPTDiscoveryEngine] with the given dependencies.
   const VNPTDiscoveryEngine({
     required this.planner,
     required this.endpointProbe,
-    this.logger = const NoopScanLogger(),
   });
 
   /// Creates a standard [VNPTDiscoveryEngine] with production-ready defaults.
@@ -43,18 +39,13 @@ class VNPTDiscoveryEngine implements VNPTDiscovery {
     return VNPTDiscoveryEngine(
       planner: const VNPTProductionPlanner(),
       endpointProbe: createDefaultProbe(),
-      logger: const NoopScanLogger(),
     );
   }
 
   @override
   VNPTDiscoverySession createSession({required VNPTDiscoveryRequest request}) {
     return _DefaultVNPTDiscoverySession(
-      request: request,
-      planner: planner,
-      endpointProbe: endpointProbe,
-      logger: logger,
-    );
+        request: request, planner: planner, endpointProbe: endpointProbe);
   }
 }
 
@@ -62,7 +53,6 @@ class _DefaultVNPTDiscoverySession implements VNPTDiscoverySession {
   final VNPTDiscoveryRequest request;
   final VNPTScanPlanner planner;
   final VNPTEndpointProbe endpointProbe;
-  final VNPTScanLogger logger;
 
   final StreamController<VNPTDiscoveryEvent> _eventsController =
       StreamController<VNPTDiscoveryEvent>.broadcast();
@@ -90,7 +80,6 @@ class _DefaultVNPTDiscoverySession implements VNPTDiscoverySession {
     required this.request,
     required this.planner,
     required this.endpointProbe,
-    required this.logger,
   }) {
     _runFuture = Future<void>.microtask(_run);
   }
@@ -284,6 +273,8 @@ class _DefaultVNPTDiscoverySession implements VNPTDiscoverySession {
     }
 
     _snapshotPending = false;
+    LoggerEngine.instance.log(
+        'Emitting candidate list update with ${_candidates.values.toList()} candidates.');
     _eventsController.add(
       VNPTCandidateListUpdated(_candidates.values.toList(growable: false)),
     );
@@ -301,7 +292,8 @@ class _DefaultVNPTDiscoverySession implements VNPTDiscoverySession {
       phaseName: cancelled ? 'cancelled' : 'completed',
       phaseIndex: cancelled ? _currentPhaseIndex : _currentPhaseIndex,
     );
-
+    LoggerEngine.instance.log(
+        'Emitting discovery completion with ${_candidates.values.toList()} discovered devices.');
     final result = VNPTDiscoveryResult(
       devices: _candidates.values.toList(growable: false),
       cancelled: cancelled,
@@ -319,7 +311,8 @@ class _DefaultVNPTDiscoverySession implements VNPTDiscoverySession {
       return;
     }
     _isFinalized = true;
-    logger.error('Discovery session failed.', error, stackTrace);
+    LoggerEngine.instance
+        .log('Discovery session failed.', name: 'vnpt_discovery');
     _eventsController.add(
       VNPTDiscoveryFailed(_mapFailureReason(error), stackTrace, cause: error),
     );
@@ -361,15 +354,13 @@ class _DefaultVNPTDiscoverySession implements VNPTDiscoverySession {
     final nextPhaseName = phaseName ?? _currentPhaseName;
     final nextPhaseIndex = phaseIndex ?? _currentPhaseIndex;
     final now = DateTime.now();
-    final phaseChanged =
-        nextPhaseIndex != _lastEmittedPhaseIndex ||
+    final phaseChanged = nextPhaseIndex != _lastEmittedPhaseIndex ||
         nextPhaseName != _lastEmittedPhaseName;
     final candidateChanged = _candidates.length != _lastEmittedCandidates;
     final targetDelta = _lastEmittedTargets < 0
         ? _probedTargets
         : _probedTargets - _lastEmittedTargets;
-    final timeExceeded =
-        _lastProgressEmitAt == null ||
+    final timeExceeded = _lastProgressEmitAt == null ||
         now.difference(_lastProgressEmitAt!) >=
             const Duration(milliseconds: 100);
 
