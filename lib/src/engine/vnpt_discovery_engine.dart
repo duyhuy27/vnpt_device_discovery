@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:vnpt_device_discovery/src/engine/vnpt_logger_engine.dart';
 
+import '../../vnpt_device_discovery.dart';
 import '../adapters/endpoint_probe_factory.dart';
 import '../adapters/vnpt_production_planner.dart';
 import '../ports/network_exceptions.dart';
@@ -45,7 +46,10 @@ class VNPTDiscoveryEngine implements VNPTDiscovery {
   @override
   VNPTDiscoverySession createSession({required VNPTDiscoveryRequest request}) {
     return _DefaultVNPTDiscoverySession(
-        request: request, planner: planner, endpointProbe: endpointProbe);
+      request: request,
+      planner: planner,
+      endpointProbe: endpointProbe,
+    );
   }
 }
 
@@ -214,6 +218,10 @@ class _DefaultVNPTDiscoverySession implements VNPTDiscoverySession {
   }
 
   Future<bool> _probeTarget(_TargetIp target) async {
+    LoggerEngine.instance.log(
+      'Starting probe for ${target.ip} on port ${target.port}.',
+      name: 'vnpt_discovery',
+    );
     final result = await endpointProbe.probe(
       target.ip,
       target.port,
@@ -273,8 +281,6 @@ class _DefaultVNPTDiscoverySession implements VNPTDiscoverySession {
     }
 
     _snapshotPending = false;
-    LoggerEngine.instance.log(
-        'Emitting candidate list update with ${_candidates.values.toList()} candidates.');
     _eventsController.add(
       VNPTCandidateListUpdated(_candidates.values.toList(growable: false)),
     );
@@ -285,15 +291,13 @@ class _DefaultVNPTDiscoverySession implements VNPTDiscoverySession {
       return;
     }
     _isFinalized = true;
-
     _emitProgress(
       force: true,
       isComplete: true,
       phaseName: cancelled ? 'cancelled' : 'completed',
       phaseIndex: cancelled ? _currentPhaseIndex : _currentPhaseIndex,
     );
-    LoggerEngine.instance.log(
-        'Emitting discovery completion with ${_candidates.values.toList()} discovered devices.');
+
     final result = VNPTDiscoveryResult(
       devices: _candidates.values.toList(growable: false),
       cancelled: cancelled,
@@ -311,8 +315,10 @@ class _DefaultVNPTDiscoverySession implements VNPTDiscoverySession {
       return;
     }
     _isFinalized = true;
-    LoggerEngine.instance
-        .log('Discovery session failed.', name: 'vnpt_discovery');
+    LoggerEngine.instance.log(
+      'Discovery session failed.',
+      name: 'vnpt_discovery',
+    );
     _eventsController.add(
       VNPTDiscoveryFailed(_mapFailureReason(error), stackTrace, cause: error),
     );
@@ -354,13 +360,15 @@ class _DefaultVNPTDiscoverySession implements VNPTDiscoverySession {
     final nextPhaseName = phaseName ?? _currentPhaseName;
     final nextPhaseIndex = phaseIndex ?? _currentPhaseIndex;
     final now = DateTime.now();
-    final phaseChanged = nextPhaseIndex != _lastEmittedPhaseIndex ||
+    final phaseChanged =
+        nextPhaseIndex != _lastEmittedPhaseIndex ||
         nextPhaseName != _lastEmittedPhaseName;
     final candidateChanged = _candidates.length != _lastEmittedCandidates;
     final targetDelta = _lastEmittedTargets < 0
         ? _probedTargets
         : _probedTargets - _lastEmittedTargets;
-    final timeExceeded = _lastProgressEmitAt == null ||
+    final timeExceeded =
+        _lastProgressEmitAt == null ||
         now.difference(_lastProgressEmitAt!) >=
             const Duration(milliseconds: 100);
 
@@ -390,6 +398,18 @@ class _DefaultVNPTDiscoverySession implements VNPTDiscoverySession {
         isComplete: isComplete,
       ),
     );
+    LoggerEngine.instance.log(
+      'Emitting progress update: phase "$nextPhaseName" ($nextPhaseIndex/${plan.phases.length}), '
+      'probed $_probedTargets/${plan.totalTargets} targets, '
+      '${_candidates.length} candidates found.',
+      name: 'vnpt_discovery',
+    );
+    if (_candidates.isNotEmpty) {
+      LoggerEngine.instance.log(
+        'Current candidates: ${_candidates.values.map((c) => c.ip).join(', ')}',
+        name: 'vnpt_discovery',
+      );
+    }
   }
 }
 
