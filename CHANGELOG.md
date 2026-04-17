@@ -9,3 +9,7 @@ All notable changes to this project will be documented in this file.
 * Supported phase-based scanning strategy (`targeted`, `nearbyExpanded`, `genericFallback`).
 * Provided `VNPTDiscoveredDevice` model.
 * Included a Flutter example app.
+
+## 0.1.1
+
+* integrate Logger engine

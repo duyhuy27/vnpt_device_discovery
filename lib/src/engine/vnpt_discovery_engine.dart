@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:vnpt_device_discovery/src/engine/vnpt_logger_engine.dart';
+
+import '../../vnpt_device_discovery.dart';
 import '../adapters/endpoint_probe_factory.dart';
-import '../adapters/noop_scan_logger.dart';
 import '../adapters/vnpt_production_planner.dart';
 import '../ports/network_exceptions.dart';
 import '../model/discovered_device.dart';
@@ -14,7 +16,6 @@ import '../model/discovery_result.dart';
 import '../model/scan_plan.dart';
 import '../model/scan_progress.dart';
 import '../ports/endpoint_probe.dart';
-import '../ports/scan_logger.dart';
 import '../ports/scan_planner.dart';
 
 /// Standard implementation of [VNPTDiscovery].
@@ -28,14 +29,10 @@ class VNPTDiscoveryEngine implements VNPTDiscovery {
   /// The probe used to check if a specific IP/port is open.
   final VNPTEndpointProbe endpointProbe;
 
-  /// The logger used for internal messages and errors.
-  final VNPTScanLogger logger;
-
   /// Creates a [VNPTDiscoveryEngine] with the given dependencies.
   const VNPTDiscoveryEngine({
     required this.planner,
     required this.endpointProbe,
-    this.logger = const NoopScanLogger(),
   });
 
   /// Creates a standard [VNPTDiscoveryEngine] with production-ready defaults.
@@ -43,7 +40,6 @@ class VNPTDiscoveryEngine implements VNPTDiscovery {
     return VNPTDiscoveryEngine(
       planner: const VNPTProductionPlanner(),
       endpointProbe: createDefaultProbe(),
-      logger: const NoopScanLogger(),
     );
   }
 
@@ -53,7 +49,6 @@ class VNPTDiscoveryEngine implements VNPTDiscovery {
       request: request,
       planner: planner,
       endpointProbe: endpointProbe,
-      logger: logger,
     );
   }
 }
@@ -62,7 +57,6 @@ class _DefaultVNPTDiscoverySession implements VNPTDiscoverySession {
   final VNPTDiscoveryRequest request;
   final VNPTScanPlanner planner;
   final VNPTEndpointProbe endpointProbe;
-  final VNPTScanLogger logger;
 
   final StreamController<VNPTDiscoveryEvent> _eventsController =
       StreamController<VNPTDiscoveryEvent>.broadcast();
@@ -90,7 +84,6 @@ class _DefaultVNPTDiscoverySession implements VNPTDiscoverySession {
     required this.request,
     required this.planner,
     required this.endpointProbe,
-    required this.logger,
   }) {
     _runFuture = Future<void>.microtask(_run);
   }
@@ -225,6 +218,10 @@ class _DefaultVNPTDiscoverySession implements VNPTDiscoverySession {
   }
 
   Future<bool> _probeTarget(_TargetIp target) async {
+    LoggerEngine.instance.log(
+      'Starting probe for ${target.ip} on port ${target.port}.',
+      name: 'vnpt_discovery',
+    );
     final result = await endpointProbe.probe(
       target.ip,
       target.port,
@@ -294,7 +291,6 @@ class _DefaultVNPTDiscoverySession implements VNPTDiscoverySession {
       return;
     }
     _isFinalized = true;
-
     _emitProgress(
       force: true,
       isComplete: true,
@@ -319,7 +315,10 @@ class _DefaultVNPTDiscoverySession implements VNPTDiscoverySession {
       return;
     }
     _isFinalized = true;
-    logger.error('Discovery session failed.', error, stackTrace);
+    LoggerEngine.instance.log(
+      'Discovery session failed.',
+      name: 'vnpt_discovery',
+    );
     _eventsController.add(
       VNPTDiscoveryFailed(_mapFailureReason(error), stackTrace, cause: error),
     );
@@ -399,6 +398,18 @@ class _DefaultVNPTDiscoverySession implements VNPTDiscoverySession {
         isComplete: isComplete,
       ),
     );
+    LoggerEngine.instance.log(
+      'Emitting progress update: phase "$nextPhaseName" ($nextPhaseIndex/${plan.phases.length}), '
+      'probed $_probedTargets/${plan.totalTargets} targets, '
+      '${_candidates.length} candidates found.',
+      name: 'vnpt_discovery',
+    );
+    if (_candidates.isNotEmpty) {
+      LoggerEngine.instance.log(
+        'Current candidates: ${_candidates.values.map((c) => c.ip).join(', ')}',
+        name: 'vnpt_discovery',
+      );
+    }
   }
 }
 
